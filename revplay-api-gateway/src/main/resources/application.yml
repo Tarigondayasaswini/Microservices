@@ -1,0 +1,86 @@
+server:
+  port: ${PORT:8080}
+
+spring:
+  application:
+    name: api-gateway
+  profiles:
+    active: default
+  config:
+    import: "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888/}"
+  cloud:
+    gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins: "http://localhost:4200"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - Authorization
+              - Content-Type
+              - X-Requested-With
+              - Accept
+              - Origin
+            exposedHeaders:
+              - Authorization
+              - Content-Type
+            allowCredentials: true
+            maxAge: 3600
+      routes:
+        - id: user-service-auth
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/auth/**
+        - id: user-service-account
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/users/**,/api/v1/profile/**
+        - id: user-service-admin
+          uri: lb://user-service
+          predicates:
+            - Path=/api/v1/admin/users/**
+            
+        - id: catalog-service
+          uri: lb://catalog-service
+          predicates:
+            - Path=/api/v1/songs/**,/api/v1/albums/**,/api/v1/artists/**,/api/v1/genres/**,/api/v1/podcasts/**,/api/v1/podcast-categories/**,/api/v1/search/**,/api/v1/browse/**,/api/v1/discover/**,/api/v1/files/**,/uploads/**
+            
+        - id: playlist-service
+          uri: lb://playlist-service
+          predicates:
+            - Path=/api/v1/playlists/**,/api/v1/likes/**,/api/v1/system-playlists/**
+            
+        - id: playback-service
+          uri: lb://playback-service
+          predicates:
+            - Path=/api/v1/play-history/**,/api/v1/recently-played/**,/api/v1/queue/**,/api/v1/autoplay/**,/api/v1/downloads/**
+            
+        - id: analytics-service
+          uri: lb://analytics-service
+          predicates:
+            - Path=/api/v1/analytics/**,/api/v1/recommendations/**,/api/v1/user-stats/**,/api/v1/audit-logs/**,/api/v1/ads/**,/api/v1/premium/**,/api/v1/subscriptions/**,/api/v1/admin/business-analytics/**,/api/v1/admin/ads/**
+            
+        - id: ai-service
+          uri: lb://catalog-service
+          predicates:
+            - Path=/api/ai/**
+
+eureka:
+  instance:
+    hostname: ${EUREKA_HOSTNAME:localhost}
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/}
+
+logging:
+  level:
+    org.springframework.cloud.gateway: INFO
+    org.springframework.http.server.reactive: INFO
+    org.springframework.web.reactive: INFO
+    reactor.ipc.netty: INFO

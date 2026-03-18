@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: revplay-ui
+  namespace: revplay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: revplay-ui
+  template:
+    metadata:
+      labels:
+        app: revplay-ui
+    spec:
+      containers:
+        - name: revplay-ui
+          image: revplaystreaming-revplay-ui:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: revplay-ui
+  namespace: revplay
+spec:
+  selector:
+    app: revplay-ui
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+  type: NodePort

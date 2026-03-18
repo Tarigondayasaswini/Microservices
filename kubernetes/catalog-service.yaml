@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-service
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: catalog-service
+  template:
+    metadata:
+      labels:
+        app: catalog-service
+    spec:
+      containers:
+        - name: catalog-service
+          image: revplay-catalog-service:latest
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 8082
+          env:
+            - name: EUREKA_HOSTNAME
+              value: catalog-service
+            - name: EUREKA_URI
+              value: http://discovery-server:8761/eureka/
+            - name: CONFIG_SERVER_URL
+              value: http://config-server:8888/
+            - name: SPRING_DATASOURCE_URL
+              value: jdbc:mysql://mysql:3306/revplay_db?createDatabaseIfNotExist=true&autoReconnect=true&useSSL=false
+            - name: SPRING_DATASOURCE_USERNAME
+              value: revplay_user
+            - name: SPRING_DATASOURCE_PASSWORD
+              value: revplay_password
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog-service
+spec:
+  selector:
+    app: catalog-service
+  ports:
+    - protocol: TCP
+      port: 8082
+      targetPort: 8082

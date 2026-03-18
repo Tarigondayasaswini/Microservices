@@ -1,0 +1,26 @@
+server:
+  port: 8082
+
+spring:
+  servlet:
+    multipart:
+      max-file-size: 50MB
+      max-request-size: 50MB
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/revplay_catalog?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${MYSQL_USER:root}
+    password: ${MYSQL_PASSWORD:123456}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+jwt:
+  secret: ${JWT_SECRET:8f434346648f6b96bc89ca248d101297e201b1cb42bd205f31a26d70fb90737a}
+
+file:
+  storage:
+    base-dir: ${UPLOAD_DIR:./uploads}
+    allowed-extensions: mp3,wav,jpg,jpeg,png
+    max-file-size-mb: 50

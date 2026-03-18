@@ -1,0 +1,184 @@
+networks:
+  revplay-net:
+    driver: bridge
+
+services:
+  mysql:
+    image: mysql:8.0.32
+    container_name: revplay-mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+      MYSQL_DATABASE: revplay_db
+      MYSQL_USER: revplay_user
+      MYSQL_PASSWORD: 123456
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  config-server:
+    build: ./revplay-config-server
+    container_name: revplay-config-server
+    ports:
+      - "8888:8888"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:8888/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+
+  discovery-server:
+    build: ./revplay-discovery-server
+    container_name: revplay-discovery-server
+    ports:
+      - "8761:8761"
+    environment:
+      - CONFIG_SERVER_URL=http://config-server:8888/
+    depends_on:
+      config-server:
+        condition: service_healthy
+
+  user-service:
+    build: ./revplay-user-service
+    container_name: revplay-user-service
+    ports:
+      - "8081:8081"
+    environment:
+      - EUREKA_HOSTNAME=user-service
+      - EUREKA_URI=http://discovery-server:8761/eureka/
+      - CONFIG_SERVER_URL=http://config-server:8888/
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=revplay_user
+      - MYSQL_PASSWORD=123456
+      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      - MAIL_USERNAME=balusuharshasri2807@gmail.com
+      - MAIL_PASSWORD=ucoovonyjqqegato
+    depends_on:
+      mysql:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+
+  catalog-service:
+    build: ./revplay-catalog-service
+    container_name: revplay-catalog-service
+    ports:
+      - "8082:8082"
+    environment:
+      - EUREKA_HOSTNAME=catalog-service
+      - EUREKA_URI=http://discovery-server:8761/eureka/
+      - CONFIG_SERVER_URL=http://config-server:8888/
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=revplay_user
+      - MYSQL_PASSWORD=123456
+      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+      - UPLOAD_DIR=/app/uploads
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      mysql:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+
+  playlist-service:
+    build: ./revplay-playlist-service
+    container_name: revplay-playlist-service
+    ports:
+      - "8083:8083"
+    environment:
+      - EUREKA_HOSTNAME=playlist-service
+      - EUREKA_URI=http://discovery-server:8761/eureka/
+      - CONFIG_SERVER_URL=http://config-server:8888/
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=revplay_user
+      - MYSQL_PASSWORD=123456
+      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    depends_on:
+      mysql:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+
+  playback-service:
+    build: ./revplay-playback-service
+    container_name: revplay-playback-service
+    ports:
+      - "8084:8084"
+    environment:
+      - EUREKA_HOSTNAME=playback-service
+      - EUREKA_URI=http://discovery-server:8761/eureka/
+      - CONFIG_SERVER_URL=http://config-server:8888/
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=revplay_user
+      - MYSQL_PASSWORD=123456
+      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    depends_on:
+      mysql:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+
+  analytics-service:
+    build: ./revplay-analytics-service
+    container_name: revplay-analytics-service
+    ports:
+      - "8085:8085"
+    environment:
+      - EUREKA_HOSTNAME=analytics-service
+      - EUREKA_URI=http://discovery-server:8761/eureka/
+      - CONFIG_SERVER_URL=http://config-server:8888/
+      - MYSQL_HOST=mysql
+      - MYSQL_USER=revplay_user
+      - MYSQL_PASSWORD=123456
+      - JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+    depends_on:
+      mysql:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+
+  api-gateway:
+    build: ./revplay-api-gateway
+    container_name: revplay-api-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - EUREKA_HOSTNAME=api-gateway
+      - EUREKA_URI=http://discovery-server:8761/eureka/
+      - CONFIG_SERVER_URL=http://config-server:8888/
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_started
+
+  revplay-ui:
+    build: ./RevPlay-UI
+    container_name: revplay-ui
+    ports:
+      - "4200:80"
+    depends_on:
+      api-gateway:
+        condition: service_started
+
+volumes:
+  mysql_data:

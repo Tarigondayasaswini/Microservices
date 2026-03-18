@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalog-service
+  namespace: revplay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: catalog-service
+  template:
+    metadata:
+      labels:
+        app: catalog-service
+    spec:
+      containers:
+        - name: catalog-service
+          image: revplaystreaming-catalog-service:v8
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: revplay-config
+          env:
+            - name: CONFIG_SERVER_URL
+              value: "http://config-server:8888/"
+            - name: EUREKA_URI
+              value: "http://discovery-server:8761/eureka/"
+            - name: EUREKA_HOSTNAME
+              value: "catalog-service"
+            - name: MYSQL_HOST
+              value: "mysql"
+          ports:
+            - containerPort: 8082
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8082
+            initialDelaySeconds: 40
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalog-service
+  namespace: revplay
+spec:
+  selector:
+    app: catalog-service
+  ports:
+    - protocol: TCP
+      port: 8082
+      targetPort: 8082

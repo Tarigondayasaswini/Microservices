@@ -1,0 +1,13 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+resources:
+  - 01-infra.yaml
+  - 02-config-discovery.yaml
+  - 03-gateway.yaml
+  - 04-user-service.yaml
+  - 05-catalog-service.yaml
+  - 06-playlist-service.yaml
+  - 07-playback-service.yaml
+  - 08-analytics-service.yaml
+  - 09-revplay-ui.yaml

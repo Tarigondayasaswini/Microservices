@@ -1,0 +1,52 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: playback-service
+  namespace: revplay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: playback-service
+  template:
+    metadata:
+      labels:
+        app: playback-service
+    spec:
+      containers:
+        - name: playback-service
+          image: revplaystreaming-playback-service:latest
+          imagePullPolicy: IfNotPresent
+          envFrom:
+            - configMapRef:
+                name: revplay-config
+          env:
+            - name: CONFIG_SERVER_URL
+              value: "http://config-server:8888/"
+            - name: EUREKA_URI
+              value: "http://discovery-server:8761/eureka/"
+            - name: EUREKA_HOSTNAME
+              value: "playback-service"
+            - name: MYSQL_HOST
+              value: "mysql"
+          ports:
+            - containerPort: 8084
+          readinessProbe:
+            httpGet:
+              path: /actuator/health
+              port: 8084
+            initialDelaySeconds: 40
+            periodSeconds: 15
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: playback-service
+  namespace: revplay
+spec:
+  selector:
+    app: playback-service
+  ports:
+    - protocol: TCP
+      port: 8084
+      targetPort: 8084

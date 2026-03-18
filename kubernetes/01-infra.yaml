@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: revplay
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: revplay-config
+  namespace: revplay
+data:
+  MYSQL_ROOT_PASSWORD: root
+  MYSQL_DATABASE: revplay_db
+  MYSQL_USER: revplay_user
+  MYSQL_PASSWORD: revplay_password
+  JWT_SECRET: 8f434346648f6b96bc89ca248d101297e201b1cb42bd205f31a26d70fb90737a
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql-deployment
+  namespace: revplay
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql:8.0.32
+          envFrom:
+            - configMapRef:
+                name: revplay-config
+          ports:
+            - containerPort: 3306
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: revplay
+spec:
+  selector:
+    app: mysql
+  ports:
+    - protocol: TCP
+      port: 3306
+      targetPort: 3306

@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: user-service
+  config:
+    import: "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888/}"
+
+  datasource:
+    url: jdbc:mysql://${DB_HOST:localhost}:3306/revplay_users?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQLDialect
+        format_sql: true
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:balusuharshasri2807@gmail.com}
+    password: ${MAIL_PASSWORD:ucoovonyjqqegato}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: ${SERVER_PORT:8081}
+
+jwt:
+  secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+  access-token-expiration-seconds: ${JWT_ACCESS_EXPIRY:900}
+  refresh-token-expiration-seconds: ${JWT_REFRESH_EXPIRY:604800}
+
+eureka:
+  instance:
+    hostname: ${EUREKA_HOSTNAME:localhost}
+  client:
+    serviceUrl:
+      defaultZone: ${EUREKA_URI:http://localhost:8761/eureka/}
+    fetch-registry: true
+    register-with-eureka: true

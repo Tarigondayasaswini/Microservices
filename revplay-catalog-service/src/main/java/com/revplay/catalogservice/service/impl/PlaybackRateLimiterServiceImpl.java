@@ -1,0 +1,44 @@
+package com.revplay.catalogservice.service.impl;
+
+import com.revplay.catalogservice.security.service.PlaybackRateLimiterService;
+import com.revplay.catalogservice.exception.PlaybackValidationException;
+import java.time.Instant;
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+
+@Service
+public class PlaybackRateLimiterServiceImpl implements PlaybackRateLimiterService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PlaybackRateLimiterService.class);
+
+    private final Map<String, Deque<Instant>> requestWindows = new ConcurrentHashMap<>();
+
+    @Override
+    public void ensureCanPlay(String userId, String entityType) {
+        ensureWithinLimit("playback:" + userId + ":" + entityType, 100, 3600, "Too many playbacks. Please try again later.");
+    }
+
+    public void ensureWithinLimit(String key, int maxRequests, int windowSeconds, String message) {
+        LOGGER.debug("Checking playback rate limit key={}", key);
+        Instant now = Instant.now();
+        Deque<Instant> window = requestWindows.computeIfAbsent(key, ignored -> new ArrayDeque<>());
+        synchronized (window) {
+            Instant threshold = now.minusSeconds(windowSeconds);
+            while (!window.isEmpty() && window.peekFirst().isBefore(threshold)) {
+                window.pollFirst();
+            }
+            if (window.size() >= maxRequests) {
+                throw new PlaybackValidationException(message);
+            }
+            window.addLast(now);
+        }
+    }
+}
+
+
+
